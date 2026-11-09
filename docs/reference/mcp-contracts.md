@@ -1273,6 +1273,33 @@ as one JSON log line on stderr (`"msg":"MCP transport listening"` with `url`)
 at every `REA_LOG_LEVEL`, because an ephemeral port is otherwise unreachable;
 stdout stays unused.
 
+Every transport also reports its own startup and composition as JSON log lines
+on stderr, because a client host that starts this process shows nothing else it
+could inspect. They appear at every `REA_LOG_LEVEL` that admits info lines —
+including `warn`, `error` and `fatal` thresholds, which would otherwise hide
+them by accident of configuration — and an explicit `REA_LOG_LEVEL=silent`
+writes nothing, because these records are informational rather than the only
+route to the server the way an ephemeral HTTP port is:
+
+- `"msg":"MCP server ready"` with `transport` and `version` once the transport
+  accepts connections. The default stdio entry adds `"analysis_runtime":
+  "deferred"`: discovery is served from the recorded catalog, and the analysis
+  runtime composes on the first tool call. An entry that composes eagerly writes
+  no such line, because its runtime record below arrives at startup anyway.
+- `"msg":"MCP analysis runtime ready"` with `transport`, `version`,
+  `optional_features`, `optional_providers` and `optional_providers_failed` once
+  each composed analysis runtime is ready: immediately at startup when the
+  process composes eagerly, on the first tool call when the stdio entry defers
+  it, and once per session for `--http`. `optional_features` lists the enabled
+  optional tool flags that `binary_session` also reports as capability
+  availability; `optional_providers` lists the optional observation adapters
+  that constructed, and `optional_providers_failed` the ones whose module failed
+  to load, whose failure reasons stay in their own warning records.
+
+These records report what composition observed. They are not a functional probe
+of the selected executables, which each tool performs when it runs, so an
+enabled optional feature does not assert that its tool is usable.
+
 This endpoint uses plain HTTP without TLS or client authentication. Use it only
 within a trusted local or isolated environment; an explicit non-loopback bind
 makes the same tools and active analysis state reachable at that address. It

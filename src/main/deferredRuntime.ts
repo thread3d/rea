@@ -21,6 +21,7 @@ import type { McpServerHandle, RuntimeDependencies } from "./types.js";
 import { SERVER_START_FAILED } from "./messages.js";
 import { reportMcpTransportError } from "./reportMcpTransportError.js";
 import { OwnedMcpServers } from "./OwnedMcpServers.js";
+import { announceDeferredStdioStartup } from "./startupAnnouncement.js";
 
 /** Verify the build-owned artifact before trusting its exact typed projection. */
 const readCatalog = (profile: McpInputSchemaProfile): RecordedMcpCatalog => {
@@ -257,6 +258,8 @@ export const runDeferred = async (
     dependencies.writeStderr(`${SERVER_START_FAILED}\n`);
     return 1;
   }
+  // A server already asked to close never reports itself ready to a client host.
   if (closing) await close();
+  else announceDeferredStdioStartup(serverLogger);
   return 0;
 };

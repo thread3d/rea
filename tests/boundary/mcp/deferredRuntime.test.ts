@@ -25,6 +25,26 @@ import { DatabaseSync } from "node:sqlite";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import type { AnySchemaObject } from "ajv";
 
+/**
+ * The only record a successfully started deferred server writes at the default
+ * level: the startup announcement, which a client host needs because it shows
+ * nothing else this process writes.
+ */
+const expectOnlyDeferredStartupAnnouncement = (stderr: string): void => {
+  expect(
+    stderr
+      .split("\n")
+      .filter((line) => line !== "")
+      .map((line) => JSON.parse(line) as Record<string, unknown>),
+  ).toEqual([
+    expect.objectContaining({
+      msg: "MCP server ready",
+      transport: "stdio",
+      analysis_runtime: "deferred",
+    }),
+  ]);
+};
+
 const connect = async (
   mode: "legacy" | "auto",
   environment: Record<string, string> = {},
@@ -602,7 +622,7 @@ console.log("MIXED_CLEANUP_RETRIED");
     expect(child.error).toBeUndefined();
     expect(child.status, child.stderr).toBe(0);
     expect(child.stdout).toBe("MIXED_CLEANUP_RETRIED\n");
-    expect(child.stderr).toBe("");
+    expectOnlyDeferredStartupAnnouncement(child.stderr);
   },
 );
 
@@ -713,7 +733,7 @@ console.log("LATE_PUBLICATION_REFUSED");
   expect(child.error).toBeUndefined();
   expect(child.status, child.stderr).toBe(0);
   expect(child.stdout).toBe("LATE_PUBLICATION_REFUSED\n");
-  expect(child.stderr).toBe("");
+  expectOnlyDeferredStartupAnnouncement(child.stderr);
 });
 
 it.each([{}, { REA_MCP_OUTPUT_SCHEMA_PROFILE: "off" }])(
