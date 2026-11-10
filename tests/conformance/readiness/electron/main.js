@@ -16,13 +16,13 @@ app.on("second-instance", (_event, commandLine) => {
   const url = commandLine.at(-1);
   if (typeof url === "string") deliverDeepLink(url);
 });
-app.whenReady().then(() => {
+void app.whenReady().then(() => {
   for (let index = 0; index < 2; index += 1) {
     const window = new BrowserWindow({
       webPreferences: { preload: require.resolve("./preload.js") },
     });
     windows.add(window);
-    window.loadFile("renderer.html");
+    void window.loadFile("renderer.html");
     window.webContents.on("render-process-gone", () => window.reload());
   }
   utilityProcess.fork(require.resolve("./utility.js"));
