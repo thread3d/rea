@@ -11,9 +11,9 @@ ipcMain.handle("notes:export", () => {
   return destination;
 });
 
-app.whenReady().then(() => {
+void app.whenReady().then(() => {
   const window = new BrowserWindow({
     webPreferences: { preload: path.join(__dirname, "preload.js") },
   });
-  window.loadFile("index.html");
+  void window.loadFile("index.html");
 });
